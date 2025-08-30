@@ -2,75 +2,95 @@ const Sonod = require("../models/sonod.model");
 const User = require("../models/user.model");
 const cloudinary = require("../utils/cloudinary");
 const fs = require("fs");
+const sendEmail = require("../utils/sendEmail");
+require("dotenv").config();
 
 const createSonod = async (req, res, next) => {
   try {
     const photo = req.file;
-    if (!photo) {
-      throw new Error("Photo Is Missing");
+    if (!photo) throw new Error("Photo is missing");
+
+    const userId = req.userId;
+    const user = await User.findById(userId);
+    if (!user) throw new Error("User not found");
+
+    const personalInfo = JSON.parse(req.body.personalInfo);
+    const presentAddress = JSON.parse(req.body.presentAddress);
+    const permanentAddress = JSON.parse(req.body.permanentAddress);
+    const { email, type } = req.body;
+
+    if (
+      !personalInfo.fullName ||
+      !personalInfo.fatherName ||
+      !personalInfo.motherName
+    ) {
+      throw new Error("Full Name, Father Name, and Mother Name are required");
     }
 
+    // Upload photo
     const result = await cloudinary.uploader.upload(photo.path, {
       folder: "sonod/appliedPhoto",
     });
-
     fs.unlinkSync(photo.path);
-    const userId = req.userId;
-
-    const user = await User.findById(userId);
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    const { email, type, personalInfo, presentAddress, permanentAddress } =
-      req.body;
-
-    if (
-      !email ||
-      !type ||
-      !personalInfo ||
-      !presentAddress ||
-      !permanentAddress
-    ) {
-      throw new Error("All fields are required");
-    }
 
     const sonod = new Sonod({
       user: userId,
-      photo: result?.secure_url,
-      personalInfo: {
-        fullName: personalInfo.fullName,
-        fatherName: personalInfo.fatherName,
-        motherName: personalInfo.motherName,
-        gender: personalInfo.gender,
-        dateOfBirth: personalInfo.dateOfBirth,
-        nidNumber: personalInfo.nidNumber,
-        phoneNumber: personalInfo.phoneNumber,
-        email,
-      },
-      presentAddress: {
-        division: presentAddress.division,
-        district: presentAddress.district,
-        upazila: presentAddress.upazila,
-        union: presentAddress.union,
-        village: presentAddress.village,
-        holdingNumber: presentAddress.holdingNumber,
-        postOffice: presentAddress.postOffice,
-        wardNo: presentAddress.wardNo,
-      },
-      permanentAddress: {
-        division: permanentAddress.division,
-        district: permanentAddress.district,
-        upazila: permanentAddress.upazila,
-        union: permanentAddress.union,
-        village: permanentAddress.village,
-        holdingNumber: permanentAddress.holdingNumber,
-        postOffice: permanentAddress.postOffice,
-        wardNo: permanentAddress.wardNo,
-      },
+      photo: result.secure_url,
+      type,
+      personalInfo,
+      presentAddress,
+      permanentAddress,
     });
-
     await sonod.save();
+
+    // ✅ Prepare email HTML
+    const html = `
+      <h2>আপনার নাগরিক সনদ আবেদন সফল হয়েছে</h2>
+      <p>নিচে আপনার আবেদন তথ্য:</p>
+      <h3>ব্যক্তিগত তথ্য:</h3>
+      <ul>
+        <li>পুরো নাম: ${personalInfo.fullName}</li>
+        <li>পিতার নাম: ${personalInfo.fatherName}</li>
+        <li>মাতার নাম: ${personalInfo.motherName}</li>
+        <li>লিঙ্গ: ${personalInfo.gender || "N/A"}</li>
+        <li>জন্ম তারিখ: ${personalInfo.dateOfBirth || "N/A"}</li>
+        <li>এনআইডি নম্বর: ${personalInfo.nidNumber || "N/A"}</li>
+        <li>ফোন: ${personalInfo.phoneNumber || "N/A"}</li>
+        <li>ইমেইল: ${personalInfo.email}</li>
+        <li>photo: ${result.secure_url}</li>
+      </ul>
+      <h3>বর্তমান ঠিকানা:</h3>
+      <ul>
+        <li>বিভাগ: ${presentAddress.division}</li>
+        <li>জেলা: ${presentAddress.district}</li>
+        <li>উপজেলা: ${presentAddress.upazila}</li>
+        <li>ইউনিয়ন: ${presentAddress.union}</li>
+        <li>গ্রাম: ${presentAddress.village}</li>
+        <li>হোল্ডিং নং: ${presentAddress.holdingNumber}</li>
+        <li>ডাকঘর: ${presentAddress.postOffice}</li>
+        <li>ওয়ার্ড নং: ${presentAddress.wardNo}</li>
+      </ul>
+      <h3>স্থায়ী ঠিকানা:</h3>
+      <ul>
+        <li>বিভাগ: ${permanentAddress.division}</li>
+        <li>জেলা: ${permanentAddress.district}</li>
+        <li>উপজেলা: ${permanentAddress.upazila}</li>
+        <li>ইউনিয়ন: ${permanentAddress.union}</li>
+        <li>গ্রাম: ${permanentAddress.village}</li>
+        <li>হোল্ডিং নং: ${permanentAddress.holdingNumber}</li>
+        <li>ডাকঘর: ${permanentAddress.postOffice}</li>
+        <li>ওয়ার্ড নং: ${permanentAddress.wardNo}</li>
+      </ul>
+      <p>আবেদন প্রক্রিয়াধীন।</p>
+    `;
+
+    // Send email to user
+    await sendEmail(
+      process.env.GMAIL_USER,
+      "নতুন নাগরিক সনদ আবেদন এসেছে",
+      html
+    );
+    await sendEmail(personalInfo.email, "নাগরিক সনদ আবেদন সফল হয়েছে", html);
 
     res.status(201).json({
       message: "Applied Successfully. Wait for our email",
@@ -121,6 +141,7 @@ const getSonodList = async (req, res, next) => {
     next(error);
   }
 };
+
 const getSonod = async (req, res, next) => {
   try {
     const sonodId = req.params.id;
