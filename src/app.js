@@ -14,7 +14,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(halmet());
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: "https://digital-sonod.netlify.app",
     credentials: true,
   })
 );
