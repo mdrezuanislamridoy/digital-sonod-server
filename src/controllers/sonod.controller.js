@@ -43,6 +43,8 @@ const createSonod = async (req, res, next) => {
     });
     await sonod.save();
 
+    console.log(sonod);
+
     // ✅ Prepare email HTML
     const html = `
       <h2>আপনার নাগরিক সনদ আবেদন সফল হয়েছে</h2>
@@ -90,7 +92,7 @@ const createSonod = async (req, res, next) => {
       "নতুন নাগরিক সনদ আবেদন এসেছে",
       html
     );
-    await sendEmail(personalInfo.email, "নাগরিক সনদ আবেদন সফল হয়েছে", html);
+    await sendEmail(user.email, "নাগরিক সনদ আবেদন সফল হয়েছে", html);
 
     res.status(201).json({
       message: "Applied Successfully. Wait for our email",
