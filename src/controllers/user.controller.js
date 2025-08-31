@@ -39,6 +39,8 @@ const createUser = async (req, res, next) => {
   try {
     const { name, email, password, verificationCode, role } = req.body;
 
+    console.log(req.body);
+
     const storedCode = await verifyCodeModel.findOne({
       email,
       verificationCode: verificationCode.toString(),
