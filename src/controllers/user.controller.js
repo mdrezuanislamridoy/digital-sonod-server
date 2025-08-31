@@ -57,7 +57,7 @@ const createUser = async (req, res, next) => {
       throw new Error("Invalid verification code");
     }
 
-    if (!name || !password || role) throw new Error("Something is missing");
+    if (!name || !password || !role) throw new Error("Something is missing");
 
     const hashedPass = await bcrypt.hash(password, 10);
 
