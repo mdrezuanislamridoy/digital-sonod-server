@@ -108,7 +108,7 @@ const updateSonodStatus = async (req, res, next) => {
 
     const user = await User.findById(userId).select("-password");
 
-    if (!user.role === "admin") {
+    if (!user.role === "chairman") {
       throw new Error("Unauthorized");
     }
 
@@ -126,7 +126,7 @@ const updateSonodStatus = async (req, res, next) => {
   }
 };
 
-const getSonodList = async (req, res, next) => {
+const getMySonodList = async (req, res, next) => {
   try {
     const userId = req.userId;
 
@@ -151,7 +151,30 @@ const getSonod = async (req, res, next) => {
       throw new Error("Didn't matching with any sonod id");
     }
 
-    res.status(200).json({ message: "Fetched Your All Sonod", sindleSonod });
+    res
+      .status(200)
+      .json({ message: "Fetched Your All Sonod", sonod: singleSonod });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getAllSonodList = async (req, res, next) => {
+  try {
+    const userId = req.userId;
+
+    const user = await User.findById(userId);
+    if (user.role === "user") {
+      throw new Error("You're not allowed to fetch all data");
+    }
+
+    const allSonods = await Sonod.find();
+
+    if (!allSonods) {
+      throw new Error("No Sanad Application In Waiting");
+    }
+
+    res.status(200).json({ message: "Fetched Your All Sonod", allSonods });
   } catch (error) {
     next(error);
   }
@@ -160,6 +183,7 @@ const getSonod = async (req, res, next) => {
 module.exports = {
   createSonod,
   updateSonodStatus,
-  getSonodList,
+  getMySonodList,
+  getAllSonodList,
   getSonod,
 };

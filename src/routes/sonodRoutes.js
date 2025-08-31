@@ -2,7 +2,8 @@ const router = require("express").Router();
 const {
   createSonod,
   updateSonodStatus,
-  getSonodList,
+  getMySonodList,
+  getAllSonodList,
   getSonod,
 } = require("../controllers/sonod.controller");
 const userCheck = require("../middleware/userCheck");
@@ -14,8 +15,10 @@ router.post(
   upload.single("sonodimage"),
   createSonod
 );
-router.post("/updateSonodStatus", userCheck, updateSonodStatus);
-router.get("/get-sonod-list", userCheck, getSonodList);
+router.put("/updateSonodStatus/:id", userCheck, updateSonodStatus);
+router.get("/get-allsonod-list", userCheck, getAllSonodList);
+router.get("/get-mysonod-list", userCheck, getMySonodList);
+
 router.get("/get-sonod/:id", userCheck, getSonod);
 
 module.exports = router;

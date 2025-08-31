@@ -106,6 +106,14 @@ const login = async (req, res, next) => {
       throw new Error("User Not Found. Please Register First!");
     }
 
+    if (user.role === "chairman" && user.status === "rejected") {
+      throw new Error("Your Account Creation request is rejected");
+    }
+
+    if (user.role === "chairman" && user.status !== "chairman") {
+      throw new Error("You're not allowed to login yet");
+    }
+
     const pass = await bcrypt.compare(password, user.password);
 
     if (!pass) {

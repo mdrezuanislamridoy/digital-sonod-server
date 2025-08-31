@@ -1,6 +1,7 @@
 const User = require("../models/user.model");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const sendEmail = require("../utils/sendEmail");
 
 const createAdmin = async (req, res, next) => {
   try {
@@ -48,7 +49,7 @@ const createChairman = async (req, res, next) => {
 
     res.status(201).json({
       message:
-        "Chairman created Successfully. please go to login page to login",
+        "Chairman creation request successfull. please wait for approval in your email",
     });
   } catch (error) {
     next(error);
@@ -65,7 +66,7 @@ const approveChairman = async (req, res, next) => {
       throw new Error("You're not allowed to do this");
     }
 
-    const { chairmanId } = req.params;
+    const chairmanId = req.params.id;
 
     const chairman = await User.findByIdAndUpdate(
       chairmanId,
@@ -73,9 +74,22 @@ const approveChairman = async (req, res, next) => {
       { new: true }
     );
 
+    console.log(chairman);
+
     if (!chairman) {
       throw new Error("Chairman updation failed");
     }
+
+    const html = `
+      <h2>Your request for chairman account is successful</h2>
+      <h4>You can now login to your chairman account</h4>
+      <br/>
+      <a href='https://digital-sonod.netlify.app'>Go To Website Login Page</a>
+      <br>
+      <P>Good Wishes to You. Thanks for joining us 😊</P>
+    `;
+
+    await sendEmail(chairman.email, "Chairman Request Approved", html);
 
     res.status(200).json({ message: "Chairman Status Updated" });
   } catch (error) {
@@ -93,7 +107,7 @@ const rejectChairman = async (req, res, next) => {
       throw new Error("You're not allowed to do this");
     }
 
-    const { chairmanId } = req.params;
+    const chairmanId = req.params.id;
 
     const chairman = await User.findByIdAndUpdate(
       chairmanId,
@@ -106,6 +120,17 @@ const rejectChairman = async (req, res, next) => {
     if (!chairman) {
       throw new Error("Chairman rejection failed");
     }
+
+    const html = `
+      <h2>Your request for chairman account is Rejected</h2>
+      <h4>You can'n login to this chairman account</h4>
+      <br/>
+      <a href='https://digital-sonod.netlify.app'>Go To Website</a>
+      <br>
+      <P>Use Leagal Information to use this site </P>
+    `;
+
+    await sendEmail(chairman.email, "Chairman Request Rejected", html);
 
     res.status(200).json({
       message: "Chairman request rejected. Try with leagal information",
