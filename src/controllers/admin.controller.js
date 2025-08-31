@@ -29,33 +29,6 @@ const createAdmin = async (req, res, next) => {
   }
 };
 
-const createChairman = async (req, res, next) => {
-  try {
-    const { name, email, password } = req.body;
-
-    if (!name || !email || !password) {
-      throw new Error("Something is missing");
-    }
-
-    const hashedPass = await bcrypt.hash(password, 10);
-
-    await User.create({
-      name,
-      email,
-      password: hashedPass,
-      role: "chairman",
-      status: "pending",
-    });
-
-    res.status(201).json({
-      message:
-        "Chairman creation request successfull. please wait for approval in your email",
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
 const approveChairman = async (req, res, next) => {
   try {
     const userId = req.userId;
@@ -141,7 +114,6 @@ const rejectChairman = async (req, res, next) => {
 };
 module.exports = {
   createAdmin,
-  createChairman,
   approveChairman,
   rejectChairman,
 };

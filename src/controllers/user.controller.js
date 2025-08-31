@@ -37,7 +37,7 @@ const sendCode = async (req, res, next) => {
 
 const createUser = async (req, res, next) => {
   try {
-    const { name, email, password, verificationCode } = req.body;
+    const { name, email, password, verificationCode, role } = req.body;
 
     const storedCode = await verifyCodeModel.findOne({
       email,
@@ -57,7 +57,7 @@ const createUser = async (req, res, next) => {
       throw new Error("Invalid verification code");
     }
 
-    if (!name || !password) throw new Error("Something is missing");
+    if (!name || !password || role) throw new Error("Something is missing");
 
     const hashedPass = await bcrypt.hash(password, 10);
 
@@ -65,29 +65,35 @@ const createUser = async (req, res, next) => {
       name,
       email,
       password: hashedPass,
+      role,
+      status: "pending",
     });
 
     await verifyCodeModel.deleteOne({ _id: storedCode._id });
 
-    const authToken = generateToken({
-      id: user._id,
-      email: user.email,
-      name: user.name,
-    });
-
-    const safeUser = await User.findById(user._id).select("-password");
-
-    res
-      .status(201)
-      .cookie("token", authToken, {
-        httpOnly: true,
-        secure: true,
-      })
-      .json({
-        message: "User created successfully",
-        user: safeUser,
-        token: authToken,
+    if (role !== "chairman") {
+      const authToken = generateToken({
+        id: user._id,
+        email: user.email,
+        name: user.name,
       });
+
+      const safeUser = await User.findById(user._id).select("-password");
+
+      res
+        .status(201)
+        .cookie("token", authToken, {
+          httpOnly: true,
+          secure: true,
+        })
+        .json({
+          message: "User created successfully",
+          user: safeUser,
+          token: authToken,
+        });
+    }
+
+    res.status(201).json({ message: "Chairman creation request submitted" });
   } catch (error) {
     next(error);
   }

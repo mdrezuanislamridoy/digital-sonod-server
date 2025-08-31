@@ -1,9 +1,8 @@
 const {
   createAdmin,
-  createChairman,
   approveChairman,
   rejectChairman,
-} = require("../controllers/createAdmin");
+} = require("../controllers/admin.controller");
 const {
   sendCode,
   createUser,
@@ -37,7 +36,6 @@ router.post("/forgetPassword", forgetPassword);
 router.post("/logout", userCheck, logout);
 
 router.post("/admin/rr/rsc-create-bro-admin", createAdmin);
-router.post("/chairman/create", createChairman);
 router.put("/chairman/approve/:id", userCheck, approveChairman);
 router.put("/chairman/reject/:id", userCheck, rejectChairman);
 
