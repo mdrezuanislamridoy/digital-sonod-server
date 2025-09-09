@@ -27,11 +27,22 @@ const createSonod = async (req, res, next) => {
       throw new Error("Full Name, Father Name, and Mother Name are required");
     }
 
-    // Upload photo
-    const result = await cloudinary.uploader.upload(photo.path, {
-      folder: "sonod/appliedPhoto",
-    });
-    fs.unlinkSync(photo.path);
+    const streamUpload = (buffer) => {
+      return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "sonod/appliedPhoto" },
+          (error, result) => {
+            if (result) resolve(result);
+            else reject(error);
+          }
+        );
+        stream.end(buffer);
+      });
+    };
+
+    if (!photo) throw new Error("Photo is missing");
+
+    const result = await streamUpload(photo.buffer);
 
     const sonod = new Sonod({
       user: userId,

@@ -215,9 +215,24 @@ const updateProfilePicture = async (req, res, next) => {
     const userId = req.userId;
     const photo = req.file;
 
-    const result = await cloudinary.uploader.upload(photo.path, {
-      folder: "sonod/userPhoto",
-    });
+    const streamUpload = (buffer) => {
+      return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            folder: "sonod/userPhoto",
+          },
+          (err, result) => {
+            if (result) {
+              return resolve(result);
+            } else {
+              reject(err);
+            }
+          }
+        );
+      });
+    };
+
+    const result = await streamUpload(photo.buffer);
 
     fs.unlinkSync(photo.path);
 
